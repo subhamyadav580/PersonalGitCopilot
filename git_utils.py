@@ -26,19 +26,27 @@ class GitCopilotUtils:
         }
 
 
-
-
-    def find_git_repos(self, state: GithubCopilotAgent) -> GithubCopilotAgent:
+    def find_git_repos(self, state: GithubCopilotAgent) -> dict:
         repos = []
-        print("Searching for git repositories...")
-        for dirpath, dirnames, _ in os.walk(os.path.expanduser("~")):
-            dirnames[:] = [d for d in dirnames if d not in self.EXCLUDE_DIRS]
+        home = os.path.expanduser("~")
 
+        print("Searching for git repositories...")
+
+        for dirpath, dirnames, _ in os.walk(home, topdown=True, followlinks=False):
+            # 1️⃣ Stop immediately if repo found
             if ".git" in dirnames:
                 repos.append(dirpath)
-                dirnames[:] = []
+                dirnames.clear()  # fastest way to stop traversal
+                continue
+
+            # 2️⃣ Aggressive prune
+            dirnames[:] = [
+                d for d in dirnames
+                if d not in self.EXCLUDE_DIRS
+            ]
 
         return {"repos_list": repos}
+
 
     def get_current_git_branch(self, state: GithubCopilotAgent) -> GithubCopilotAgent:
         """
