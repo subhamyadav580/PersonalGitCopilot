@@ -1,4 +1,5 @@
 import os
+import re
 import subprocess
 from typing import List
 from agent_schemas import GithubCopilotAgent
@@ -13,6 +14,18 @@ class GitCopilotUtils:
         safely.
         """
         pass
+
+    def get_current_git_branch(self, state: GithubCopilotAgent) -> GithubCopilotAgent:
+        # try:
+        branch = subprocess.check_output(
+            ["git", "branch", "--show-current"],
+            stderr=subprocess.DEVNULL
+            )
+        print("Current branch:", branch.decode().strip())
+        return {"branch_name": branch.decode().strip()}
+        # except subprocess.CalledProcessError:
+        #     return {"branch_name": ""}
+
 
     def git_unstaged_files(self, state: GithubCopilotAgent) -> GithubCopilotAgent:
         """
@@ -62,7 +75,7 @@ class GitCopilotUtils:
         return {"staged_files_diff": result.stdout.strip()}
 
 
-    def commit_files(self, message):
+    def commit_files(self, state: GithubCopilotAgent) -> GithubCopilotAgent:
         """
         Commits all the staged files with a given message.
 
@@ -72,9 +85,11 @@ class GitCopilotUtils:
         Returns:
             subprocess.CompletedProcess: The result of the subprocess.
         """
-        return subprocess.run(["git", "commit", "-m", message], check=True)
+        commit_result = subprocess.run(["git", "commit", "-m", state['commit_message']], check=True)
+        print("Files committed with message:", commit_result)
+        return {}
 
-    def push_branch(branch="main"):
+    def push_branch(self, state: GithubCopilotAgent) -> GithubCopilotAgent:
         """
         Pushes the current branch to the remote repository.
 
@@ -84,4 +99,6 @@ class GitCopilotUtils:
         Returns:
             subprocess.CompletedProcess: The result of the subprocess.
         """
-        return subprocess.run(["git", "push", "origin", branch], check=True)
+        resultl =  subprocess.run(["git", "push", "origin", state["branch_name"]], check=True)
+        print("Branch pushed:", resultl)
+        return {}

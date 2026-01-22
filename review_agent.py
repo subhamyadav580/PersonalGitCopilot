@@ -4,30 +4,49 @@ from langchain.prompts import ChatPromptTemplate
 import os
 
 from agent_schemas import GithubCopilotAgent
+from langchain_core.output_parsers import PydanticOutputParser
+
+from pydantic import BaseModel, Field
 
 
-os.environ["OPENAI_API_KEY"] = "your_openai_api_key_here"
+
+
+class CommitMessage(BaseModel):
+    commit_message: str = Field(
+        description="A concise, imperative git commit message"
+    )
+
+
+parser = PydanticOutputParser(pydantic_object=CommitMessage)
+
 
 class CommitMessageGenerator:
     def __init__(self, model: str = "gpt-4o-mini"):
         self.llm = ChatOpenAI(model=model)
 
         self.prompt = ChatPromptTemplate.from_template("""
-            You are an experienced code reviewer.
-            Your task is to review the provided file diff and give a concise commit message.
+        You are an experienced code reviewer.
+        Your task is to review the provided file diff and give a concise commit message.
 
-            Follow these steps:
-            1. Analyze the provided diff carefully.
-            2. Generate a commit message summarizing the changes.
+        Rules:
+        - Use imperative mood
+        - Max 72 characters
+        - No explanations
 
-            Diff:
-            {staged_files_diff}
+        {format_instructions}
+
+        Diff:
+        {staged_files_diff}
         """)
 
-        self.chain = self.prompt | self.llm
+        self.chain = self.prompt | self.llm | parser
 
     def generate(self, state: GithubCopilotAgent) -> str:
         response = self.chain.invoke(
-            {"staged_files_diff": state["staged_files_diff"]}
-        )
-        return {"commit_message": response.content.strip()}
+                {
+                    "staged_files_diff": state["staged_files_diff"],
+                    "format_instructions": parser.get_format_instructions(),
+                }
+            )
+        print("Generated commit message:", response.commit_message)
+        return {"commit_message": response.commit_message}
