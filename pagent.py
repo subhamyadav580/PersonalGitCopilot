@@ -33,8 +33,6 @@ graph.add_edge("stage_files_safe", "get_staged_diff")
 
 graph.add_edge("get_staged_diff", "check_files_to_commit")
 graph.add_edge("check_files_to_commit", "generate_commit_message")
-graph.add_edge("check_files_to_commit", END)
-
 graph.add_edge("generate_commit_message", "commit_files")
 graph.add_edge("commit_files", "push_branch")
 graph.add_edge("push_branch", END)
