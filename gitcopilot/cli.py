@@ -11,7 +11,7 @@ app = typer.Typer(
 @app.callback()
 def main():
     """
-    Run GitCopilot (default command).
+    Run GitCopilot (default command)
     """
     ensure_runtime_env()
     run_agent()
